@@ -1,0 +1,31 @@
+{
+  "name": "ai-devkit-v2",
+  "version": "0.1.0",
+  "description": "Adversarial multi-agent engineering org for Claude Code — a coordinator drives planner/skeptic/implementer/validator/sanitizer subagents to produce reviewed, tested, standards-clean code.",
+  "type": "module",
+  "bin": {
+    "ai-devkit-v2": "./bin/ai-devkit-v2.js"
+  },
+  "files": [
+    ".claude",
+    "docs",
+    "templates",
+    "bin",
+    "CONVENTIONS.md",
+    "README.md"
+  ],
+  "scripts": {
+    "selftest": "node ./bin/ai-devkit-v2.js --version"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude-code",
+    "agents",
+    "multi-agent",
+    "coordinator",
+    "frontend"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,11 @@
+# Runtime output of the pipeline (plans, test cases, reports) — regenerated each run.
+# NOTE: we commit the KIT (.claude/commands, agents, rules, skills, secrets,
+# CONVENTIONS.md) — only its generated output is ignored here.
+.claude/output/
+
+# Graph cache (produced by fe-harness in a target repo)
+.harness/
+
+# OS / editor / deps
+.DS_Store
+node_modules/
