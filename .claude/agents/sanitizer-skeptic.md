@@ -21,18 +21,39 @@ every valid reduction/fix you find. Read-only — you propose, the coordinator a
 2. **Dead / unused** — added code nothing calls; unused imports, vars, params, branches.
 3. **Non-reuse / duplication** — logic that re-implements an existing helper/component/
    util. Point to the thing it should reuse (cite the file).
-4. **Misplaced code** — inline user-facing strings in JSX (→ constants file), constants
-   in components (→ `const/`), pure logic inline (→ `helpers/`), types inline
-   (→ `types/`), helper components not at the bottom of the file.
+4. **Misplaced code** — inline user-facing strings in JSX (→ constants file), shared/
+   group-able constants in components (→ `const/`), pure logic inline (→ `helpers/`), types
+   inline (→ `types/`). Trivial single-use component-local consts may stay co-located.
 5. **Convention drift vs CONVENTIONS.md** — naming, within-file order, `@/` aliasing,
    no cross-feature import, inline `type` imports, no `!`, tokens-only (no raw color/px),
    `pendoId` present, no browser storage / Authorization handling, Prettier shape.
 6. **Missing "why" comments** on new exported consts/helpers/types/components.
+7. **Comment hygiene (hard 3-line cap).** Every comment body is at most 3 lines — "why"
+   doc-comments (item 6) included, **no exemption**. Compress each to its decision/constraint
+   and cut the prose. DELETE outright: what-only comments ("// set x to 5"), signature
+   restatements, commented-out code, and decorative banners/rule-off separators in
+   component/logic files. Preserve decision ids, Pendo id references, and tool directives
+   (`eslint-disable`, `@ts-*`, `prettier-ignore`) verbatim. Propose the exact trimmed text; flag
+   any block where 3 lines cannot hold the load-bearing reasoning rather than silently dropping
+   it. EXCEPTION: in `const/`, `helpers/` and `types/` files, a one-line group banner
+   `/* ---- <group> ---- */` heading a group of related declarations is an encouraged organising
+   device — keep it, do NOT flag it as decoration.
+8. **Within-file order** — the exported component that renders JSX must be the LAST declaration
+   in the file; small non-reusable helpers/subcomponents the file keeps sit ABOVE it. Inside a
+   component the body order is: `useState` first → other hooks (`useRef`/`useMemo`/`useCallback`/
+   context/custom, any order) → `useEffect`/`useLayoutEffect` LAST among hooks → derived values &
+   small local render helpers → `return` (the render is last). Flag any file/component that
+   deviates; the fix is a behavior-neutral reorder (declarations hoist).
+9. **Const/helpers/types organisation** — shared or group-able data/copy/config/lookup consts
+   belong in a `const/` file (feature `const/` or `src/const/globalConst/`), not inline in a
+   component. Within a `const/`, `helpers/` or `types/` file, related declarations are grouped
+   and each group is headed by a `/* ---- <group> ---- */` banner. Flag ungrouped shared consts
+   left inline, and groups of related declarations in these files that lack a banner.
 
 ## Output (report to the coordinator) — `sanitization-report.md`
 A numbered proposal list. For each:
 - `id` (P1, P2, …)
-- `category`: bloat | dead | reuse | misplaced | drift | comment
+- `category`: bloat | dead | reuse | misplaced | drift | comment | order | grouping
 - `file:line`
 - `problem` (one line) + the offending snippet
 - `proposed change`: the smallest concrete edit (show the shortened/moved version)
