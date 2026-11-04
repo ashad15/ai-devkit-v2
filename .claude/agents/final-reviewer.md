@@ -37,3 +37,6 @@ the coordinator fixes.
 - Edit code (you report; the coordinator applies fixes).
 - Pass the review while any BLOCKER/MAJOR finding stands.
 - Raise pure style issues — those are the sanitizer's job; stay on safety & hygiene.
+- Ask for access or permission. Run only what the plan's Access manifest approved (e.g.
+  `npm audit` needs network); if it wasn't approved, report `BLOCKED: needs <access>`
+  as a finding instead of prompting (`.claude/rules/00-upfront-access.md`).

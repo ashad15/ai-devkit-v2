@@ -46,3 +46,6 @@ surface. You both **run the tests** and statically check cases the suite can't c
 - Rubber-stamp, hide failures, or mark `Passed` without proof.
 - Change implementation code (you validate; the implementer fixes).
 - Mix unrelated issues into the verdict.
+- Ask for access or permission. Run only what the plan's Access manifest approved; if a
+  check needs more, mark those cases `Unable To Test` with `BLOCKED: needs <access>`
+  and continue (`.claude/rules/00-upfront-access.md`).

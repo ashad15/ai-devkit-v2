@@ -30,6 +30,10 @@ right because it sounds confident.
 6. **Convention violations** — plan proposes code that would break the repo's patterns
    (file structure, constants/helpers/types split, ≤500-line files).
 7. **Untestable claims** — parts of the plan with no way to verify success.
+8. **Missing access** — anything a later phase will need to run, write, fetch, or
+   launch that the plan's Access manifest doesn't list (validator test commands,
+   typecheck/lint, installs, browser/editor opens, deletes, git writes). Nobody can
+   ask for access mid-run, so an unlisted one is a BLOCKER.
 
 ## Output (return to the coordinator)
 A ranked **flaw list**. For each flaw:

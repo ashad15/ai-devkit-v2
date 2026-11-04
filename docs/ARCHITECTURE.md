@@ -79,6 +79,9 @@ its job is to *find problems*, not to approve. There is no literal scoreboard.
 ## 3. The phases in detail
 
 ### Phase 1 — Planning (loop until consensus)
+0. **Gate 1 — intake.** After a read-only orientation and *before any subagent runs*,
+   the coordinator restates its understanding and asks the user to confirm it and to
+   resolve any fork the code can't answer. `/task` never starts silently.
 1. Coordinator orients itself by reading the relevant source directly
    (`Glob`/`Grep`/`Read`) — entry points, touched files, and their importers.
 2. Coordinator hands the task to **planner** AND, *independently*, to **plan-skeptic**
@@ -91,6 +94,12 @@ its job is to *find problems*, not to approve. There is no literal scoreboard.
    - `plan.brief.md` — bullets, human-facing; **opened in the editor** for you.
    - `plan.detail.md` — full implementation detail; the **coordinator and downstream
      agents work off this one**.
+6. **Gate 2 — approval + access.** Every plan carries an **Access manifest** (shell
+   commands, writes, network, MCP/credentials, git writes, launched apps — across *all*
+   phases). The coordinator asks for plan approval and the whole manifest in one
+   consolidated question, and offers to pre-grant it as allow rules. Execution
+   (Phases 2–4) then runs without asking for anything; an unapproved access is skipped
+   and reported as `BLOCKED`. See `.claude/rules/00-upfront-access.md` (top priority).
 
 ### Phase 2 — Parallel work
 Coordinator starts two tracks at once:
@@ -107,7 +116,8 @@ Coordinator starts two tracks at once:
   report to the coordinator.
 - Coordinator re-enters **Phase 1** with the failures as new input → full flow again.
 - **Cap: 3 validation rounds.** If still failing, **HALT** and ask the user:
-  *ignore these tests / revert the changes / confirm anyway*.
+  *ignore these tests / revert the changes / confirm anyway*. (The only mid-run stop —
+  a decision about results, not an access request.)
 
 ### Phase 4 — Sanitization + final review
 - **sanitizer-skeptic** reviews every changed line against `CONVENTIONS.md`: removes

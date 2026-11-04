@@ -32,7 +32,7 @@ decides. Quality comes from the structure, not from any single agent being cleve
     planner.md  plan-skeptic.md  plan-reviewer.md
     test-writer.md  test-skeptic.md  implementer.md
     test-validator.md  sanitizer-skeptic.md  final-reviewer.md
-  rules/                  # pipeline contract, conventions pointer
+  rules/                  # 00-upfront-access (top priority), pipeline contract, conventions pointer
   secrets/README.md       # where local MCP secrets go (never committed)
   CONVENTIONS.md          # the enforceable coding standard (from the target repo)
   output/task-<id>/       # runtime artifacts (git-ignored): planning/ test-cases/ reports/
