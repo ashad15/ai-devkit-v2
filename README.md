@@ -32,8 +32,7 @@ decides. Quality comes from the structure, not from any single agent being cleve
     planner.md  plan-skeptic.md  plan-reviewer.md
     test-writer.md  test-skeptic.md  implementer.md
     test-validator.md  sanitizer-skeptic.md  final-reviewer.md
-  rules/                  # graph-first, pipeline contract, conventions pointer
-  skills/graph-query/     # read the fe-harness graph before grep
+  rules/                  # pipeline contract, conventions pointer
   secrets/README.md       # where local MCP secrets go (never committed)
   CONVENTIONS.md          # the enforceable coding standard (from the target repo)
   output/task-<id>/       # runtime artifacts (git-ignored): planning/ test-cases/ reports/
@@ -43,8 +42,9 @@ docs/ARCHITECTURE.md      # full design + phases + caps
 
 ## Requirements
 - **Claude Code CLI**, logged in with a Pro/Max subscription (`claude auth login`).
-- The **graph**: run `fe-harness init .` / `reindex` in the target repo so
-  `.harness/REPO_MAP.md` + `.harness/graph/` exist. The coordinator reads them for context.
+
+The coordinator orients itself by reading the target repo's source directly
+(`Glob`/`Grep`/`Read`) — no external indexer or graph step is required.
 
 ## Install into a target repo
 These `.claude/` assets + `CONVENTIONS.md` are dropped into (or symlinked from) the
@@ -66,5 +66,5 @@ they share one usage window — a heavy task can exhaust it. Round caps are buil
 
 ## Status
 Early build. See `docs/ARCHITECTURE.md` §9 for the phased plan. Step 0 (scaffold +
-agents + conventions) is in place; the `/task` orchestration is written; live wiring,
-the graph hook, and the installer are next.
+agents + conventions) is in place; the `/task` orchestration is written; live wiring
+and the installer are next.

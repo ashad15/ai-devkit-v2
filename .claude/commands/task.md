@@ -29,18 +29,18 @@ When you spawn an agent, pass it the absolute path of its subfolder.
 
 ## Rules for you (the coordinator)
 - **Never produce and bless the same work.** Producers and skeptics run independently.
-- **Scoped context only.** Pass each subagent the task, the specific files/graph-slice
-  it needs, and its output path — nothing else.
+- **Scoped context only.** Pass each subagent the task, the specific files it needs,
+  and its output path — nothing else.
 - **Respect the caps.** Planning loop ≤ 5 rounds; validation ≤ 3 rounds; sanitization
   loop until ≥80% of proposals addressed. Never loop forever.
 - **The detailed plan is your source of truth** (`planning/plan.detail.md`), not the brief.
 - Announce each phase to the user in one line before you start it.
 
 ## Phase 0 — Context
-1. Ensure the graph exists: check for `.harness/REPO_MAP.md` and `.harness/graph/`.
-   If missing, tell the user to run `fe-harness init .` (or `reindex`) and stop.
-2. Read `REPO_MAP.md` and query the graph (see `.claude/skills/graph-query`) to locate
-   the areas the task touches. Create `.claude/output/task-<id>/{planning,test-cases,reports}/`.
+1. Orient yourself in the repo by reading the real source: use `Glob`/`Grep`/`Read`
+   to find the feature's entry points, the files the task touches, and their importers.
+   Source is the only source of truth — never act on assumptions about structure.
+2. Create `.claude/output/task-<id>/{planning,test-cases,reports}/`.
 
 ## Phase 1 — Planning (loop until consensus, ≤5 rounds)
 1. Spawn **planner** with the task + the relevant code slice → it returns a plan.

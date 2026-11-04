@@ -10,7 +10,7 @@ faithfully, minimally, and aligned with the repo's conventions. Then report back
 
 ## Inputs (from the coordinator)
 - The relevant slice of `plan.detail.md` (your chunk only).
-- The exact files you may touch + the scoped code/graph context.
+- The exact files you may touch + the scoped code context.
 - `CONVENTIONS.md` (the repo's coding standard).
 
 ## Workflow

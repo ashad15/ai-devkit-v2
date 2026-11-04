@@ -79,7 +79,8 @@ its job is to *find problems*, not to approve. There is no literal scoreboard.
 ## 3. The phases in detail
 
 ### Phase 1 — Planning (loop until consensus)
-1. Coordinator reads the **graph** (`.harness/graph/` + `REPO_MAP.md`) for context.
+1. Coordinator orients itself by reading the relevant source directly
+   (`Glob`/`Grep`/`Read`) — entry points, touched files, and their importers.
 2. Coordinator hands the task to **planner** AND, *independently*, to **plan-skeptic**
    (the skeptic gets the task + relevant code, **not** the planner's reasoning).
 3. Planner returns a plan → coordinator passes the plan to **plan-skeptic**, which
@@ -141,14 +142,13 @@ target repo):
 
 ---
 
-## 5. Context & the graph
+## 5. Context & scoping
 
-- The repo graph + overview are produced by **fe-harness** (`fe-harness init` /
-  `reindex`) into the target repo's `.harness/`. The coordinator reads
-  `.harness/REPO_MAP.md` and `.harness/graph/{nodes,edges}.jsonl` to orient and to
-  scope each agent's context.
-- **Scoped context is the rule:** sub-agents receive only the files/graph-slice they
-  need, never the whole repo. This keeps them unbiased, cheap, and focused.
+- The coordinator orients itself by reading the target repo's source directly with
+  `Glob`/`Grep`/`Read` — entry points, the files a task touches, and their importers.
+  There is no external indexer or graph step; source is the only source of truth.
+- **Scoped context is the rule:** sub-agents receive only the files they need, never
+  the whole repo. This keeps them unbiased, cheap, and focused.
 
 ---
 
@@ -175,8 +175,8 @@ written. Highlights (see the file for the full, evidence-backed rules):
 | coordinator | the main Claude Code session, following `task.md` |
 | each agent | a subagent → `.claude/agents/<name>.md`, invoked via the Task tool in an isolated context |
 | "independent / unbiased" | subagent context isolation — each gets only scoped input |
-| agent skills / how-they-work | `.claude/skills/` |
-| graph | fe-harness output in `.harness/` |
+| agent skills / how-they-work | `.claude/skills/` (none shipped currently) |
+| context / orientation | read source directly via `Glob`/`Grep`/`Read` |
 | coding standard | `CONVENTIONS.md`, read by the sanitizer |
 
 ---
@@ -194,7 +194,7 @@ for small tasks.
 
 ## 9. Build status (phased)
 
-- [ ] **Step 0** — repo scaffold, ported agent brains, `CONVENTIONS.md`, graph wiring.
+- [ ] **Step 0** — repo scaffold, ported agent brains, `CONVENTIONS.md`.
 - [ ] **Step 1** — `/task` → coordinator + planning triad → two plan files. *(vertical slice)*
 - [ ] **Step 2** — test-writer + test-skeptic.
 - [ ] **Step 3** — implementer fan-out + test-validator + 3× retry.

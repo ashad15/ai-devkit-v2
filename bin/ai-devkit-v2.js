@@ -55,7 +55,6 @@ ${C.bold("What init does")}
   3. Leaves your settings*.json and .claude/output/ untouched
 
 ${C.bold("Then, in the target repo")}
-  - Build the graph:  fe-harness init .     (needs .harness/ for context)
   - In Claude Code:   /task "<what you want done>"
 `;
 
@@ -108,7 +107,6 @@ function printNext(target) {
   console.log("");
   console.log(C.bold("Next:"));
   console.log(`  cd ${rel}`);
-  console.log(`  fe-harness init .            ${C.dim("# build the graph the coordinator reads")}`);
   console.log(`  ${C.dim("# then, in Claude Code (this editor), open the repo and run:")}`);
   console.log(`  /task "<what you want done>"`);
 }
@@ -125,11 +123,6 @@ function cmdInit(arg, { update = false } = {}) {
   if (ensureGitignored(target)) console.log(C.green("✔") + " added .claude/ to .gitignore");
   else console.log(C.dim("  .claude/ already git-ignored"));
 
-  if (!fs.existsSync(path.join(target, ".harness", "graph"))) {
-    console.log(C.yellow("!") + " no .harness/ graph yet — run " + C.bold("fe-harness init .") + " in the target repo.");
-  } else {
-    console.log(C.green("✔") + " graph present (.harness/graph)");
-  }
   printNext(target);
 }
 

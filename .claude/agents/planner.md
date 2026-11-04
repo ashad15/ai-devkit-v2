@@ -10,8 +10,8 @@ You do NOT write implementation code. You are read-only.
 
 ## Inputs (from the coordinator)
 - The task.
-- A scoped slice of the repo (relevant files) + access to `.harness/REPO_MAP.md` and
-  `.harness/graph/` for structure.
+- A scoped slice of the repo (the relevant files); read more with `Glob`/`Grep`/`Read`
+  as needed to understand structure.
 - On a re-plan: the plan-reviewer's required changes and/or failing test reports.
 
 ## Workflow
@@ -23,8 +23,8 @@ You do NOT write implementation code. You are read-only.
 3. **Scope.** Define in-scope and out-of-scope, minimal and tied to the request.
 4. **Locate & validate with code (mandatory).** Confirm every touch point by actually
    reading source — components, state/selectors/actions, API + HTTP client usage,
-   routes/params, shared utilities. **Code is the source of truth.** Use the graph's
-   `impact`/importers to find blast radius before proposing changes to shared files.
+   routes/params, shared utilities. **Code is the source of truth.** Grep for a shared
+   file's importers/usages to find blast radius before proposing changes to it.
 5. **UI structure (when design is in scope).** Capture layout, not just widgets: page
    shell, column split, section order, control types, spacing. Pair a logic AC and a
    visual AC per phase. **Visual parity == logic parity** — UI work lives in the SAME

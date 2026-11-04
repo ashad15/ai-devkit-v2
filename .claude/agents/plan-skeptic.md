@@ -15,13 +15,13 @@ right because it sounds confident.
 ## Inputs (from the coordinator)
 - The task.
 - The plan produced by the planner.
-- A scoped slice of the real code + `.harness/` graph.
+- A scoped slice of the real code (read wider with `Glob`/`Grep`/`Read` as needed).
 
 ## What to hunt for
 1. **Correctness gaps** — logic that won't produce the stated invariant; wrong
    assumptions about how the existing code actually behaves (verify against source).
 2. **Missing blast radius** — shared files/consumers the plan edits or breaks but
-   doesn't account for. Use the graph's importers/impact to check.
+   doesn't account for. Grep for the file's importers/consumers to check.
 3. **Edge cases** — empty/null/undefined, error/timeout paths, boundaries, permission/
    role gates, concurrency/double-submit, reload/refresh behavior.
 4. **Scope errors** — missing deliverables (explicit or implicit), OR scope creep.
@@ -36,7 +36,7 @@ A ranked **flaw list**. For each flaw:
 - `severity`: BLOCKER | MAJOR | MINOR
 - `where`: the plan section / file it concerns
 - `problem`: what's wrong, in one or two sentences
-- `evidence`: the real code or graph fact that proves it (cite file:line when you can)
+- `evidence`: the real code that proves it (cite file:line when you can)
 - `suggested fix`: the smallest change that resolves it (optional)
 
 End with a one-line verdict: `BLOCKERS: <n>  MAJOR: <n>  MINOR: <n>`.

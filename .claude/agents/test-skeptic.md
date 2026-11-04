@@ -16,8 +16,8 @@ by adding cases that would catch real regressions.
 1. **Reload & persistence** — does it survive a page refresh? Re-fetch? Lost state?
 2. **Edge & error** — empty/null/undefined data, API error/timeout, slow network,
    boundary values, double-submit/concurrency, permission/role gates.
-3. **Regression** — nearby behavior the change could silently break (use the graph's
-   importers to find consumers of what changed).
+3. **Regression** — nearby behavior the change could silently break (grep for the
+   importers/consumers of what changed).
 4. **Bias check** — cases that only assert the happy path, or that are written to pass
    rather than to probe. Rewrite weak ones into genuine probes.
 5. **Convention-sensitive cases** — e.g. tokens-only styling, a11y (one `h1`/`main`,

@@ -12,10 +12,10 @@ obey these invariants.
    user (opened in the editor); `plan.detail.md` is the agents' source of truth.
 4. **Caps are hard.** Planning consensus loop ≤ 5 rounds; validation retry ≤ 3 rounds
    (then HALT and ask the user); sanitization loops until ≥ 80% of proposals addressed.
-5. **Scoped context.** Each subagent gets only the files/graph-slice + output path it
-   needs. Fan-out implementation into independent chunks; never one agent doing it all.
+5. **Scoped context.** Each subagent gets only the files + output path it needs.
+   Fan-out implementation into independent chunks; never one agent doing it all.
 6. **Explicit verdicts.** Gate agents end with a machine-checkable line:
    `VERDICT: CONSENSUS|REVISE` · `VALIDATION_PASS: true|false` · `FINAL_REVIEW_CLEAN: true|false`.
 7. **Everything stays under `.claude/output/task-<id>/`.** No pipeline artifact outside `.claude/`.
-8. **Code is the source of truth.** Ground every claim in real source read via the
-   graph-first rule; never act on assumptions.
+8. **Code is the source of truth.** Ground every claim in real source you read with
+   `Glob`/`Grep`/`Read`; never act on assumptions.
