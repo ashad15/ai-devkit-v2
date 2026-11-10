@@ -1,6 +1,8 @@
 # Runtime output of the pipeline (plans, test cases, reports) — regenerated each run.
 # NOTE: we commit the KIT (.claude/commands, agents, rules, skills, secrets,
 # CONVENTIONS.md) — only its generated output is ignored here.
+.ai-devkit/
+# older runs wrote here, before output moved out of the protected .claude/ folder
 .claude/output/
 
 # OS / editor / deps

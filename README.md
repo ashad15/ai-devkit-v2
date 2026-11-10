@@ -10,7 +10,7 @@ brains, re-platformed onto Claude Code's subagents, slash commands, and skills.
 ```
 /task "<what you want>"
    → coordinator
-      → PLAN     (planner ⟂ plan-skeptic → plan-reviewer, loop to consensus)
+      → PLAN     (planner → plan-skeptic → plan-reviewer, quick, ≤2 rounds)
       → TEST     (test-writer → test-skeptic)      ⎫ in
       → BUILD    (N implementer sub-agents, scoped) ⎭ parallel
       → VALIDATE (test-validator, ≤3 retries)
@@ -35,9 +35,9 @@ decides. Quality comes from the structure, not from any single agent being cleve
   rules/                  # pipeline contract, conventions pointer
   secrets/README.md       # where local MCP secrets go (never committed)
   CONVENTIONS.md          # the enforceable coding standard (from the target repo)
-  output/task-<id>/       # runtime artifacts (git-ignored): planning/ test-cases/ reports/
 bin/ai-devkit-v2.js       # the installer CLI
 docs/ARCHITECTURE.md      # full design + phases + caps
+.ai-devkit/output/        # runtime artifacts per task (git-ignored): planning/ test-cases/ reports/
 ```
 
 ## Requirements
@@ -55,14 +55,19 @@ target repo so Claude Code loads them there. (Installer script TBD — see
 ```
 /task "add email format validation to the signup form"
 ```
-Per-task artifacts land in `.claude-devkit/tasks/<task-id>/` (plan.brief.md,
-plan.detail.md, test-cases.json/html, reports). The brief plan opens in your editor;
-the HTML test table opens in your browser.
+Per-task artifacts land in `.ai-devkit/output/task-<id>/` (plan.brief.md,
+plan.detail.md, test-cases.json, reports); you get a link to the brief plan.
+
+At the start, `/task` asks you once to switch to **accept-edits** mode, which approves
+every agent's file edits for the run. Commands still ask, but they're batched into a few
+calls (about one per validation round). Where your org's policy allows custom permission
+rules, you can pre-approve the check commands with `/permissions`.
 
 ## ⚠️ Cost
 One `/task` can fan out to **dozens of agent invocations**. On a Pro/Max subscription
-they share one usage window — a heavy task can exhaust it. Round caps are built in; a
-"lite" mode (skip some skeptics for small tasks) is planned.
+they share one usage window — a heavy task can exhaust it. Round caps and per-agent
+effort levels are built in, and SIMPLE tasks can take a fast path (planner → implementer
+→ validator → final review).
 
 ## Status
 Early build. See `docs/ARCHITECTURE.md` §9 for the phased plan. Step 0 (scaffold +

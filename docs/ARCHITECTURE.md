@@ -22,12 +22,12 @@ and skills — and upgraded from a linear pipeline into a coordinator-led org wi
                          │   (main session) │   drives every phase, hands each
                          └───────┬─────────-┘   agent ONLY its scoped context)
                                  │
-   ┌─────────────PLANNING (loop until consensus)──────────────┐
-   │   planner  ─┐                                            │
-   │             ├─(independent, parallel)                    │
-   │  plan-skeptic ┘  ── finds max flaws in the plan          │
-   │             │                                            │
-   │        plan-reviewer ── reconciles → verdict ─► repeat   │
+   ┌──────────────PLANNING (quick, ≤2 rounds)─────────────────┐
+   │  planner ── writes plan.detail.md + plan.brief.md        │
+   │     │                                                    │
+   │  plan-skeptic ── own context; BLOCKER/MAJOR flaws first  │
+   │     │                                                    │
+   │  plan-reviewer ── quick verdict ─► at most one revision  │
    └──────────────────────────────────────────────────────────┘
                                  │  (consensus)
                                  ▼
@@ -42,12 +42,12 @@ and skills — and upgraded from a linear pipeline into a coordinator-led org wi
                                  │
                                  ▼
               VALIDATION:  test-validator (adversarial) runs tests
-                   │ fail → back to PLANNING with failures (max 3 rounds)
+                   │ fail → impl fix, or re-PLAN if the plan is wrong (max 3 rounds)
                    │ still failing after 3 → HALT, ask the user
                    ▼ pass
          SANITIZATION:  sanitizer-skeptic enforces CONVENTIONS.md line-by-line
                    │ proposes cuts/reuse/shortening → coordinator applies
-                   │ loop until ≥80% of proposals addressed
+                   │ apply until ≥80% addressed, then one confirm pass
                    ▼
             FINAL REVIEW:  no secrets / console.log / TODO / vulns (OSS)
                    ▼
@@ -61,10 +61,10 @@ and skills — and upgraded from a linear pipeline into a coordinator-led org wi
 | # | Agent | Role | Adversarial | Ported from ai-devkit |
 |---|-------|------|:-----------:|-----------------------|
 | 0 | **coordinator** | Owns full context; sequences all phases; gives each agent *scoped* context, never the whole thing | — | new |
-| 1 | **planner** | Produce the implementation plan (what/where/how) | — | `planner` |
-| 2 | **plan-skeptic** | Find the **maximum** number of flaws in the plan; runs *parallel* to planner so it isn't biased | ✅ | new |
-| 3 | **plan-reviewer** | Reconcile planner vs. plan-skeptic → consensus verdict | — | new |
-| 4 | **test-writer** | Write `test-cases.json` + a human HTML comparison table | — | `testCaseWriter` |
+| 1 | **planner** | Quickly produce the implementation plan (what/where/how) and write the two plan files | — | `planner` |
+| 2 | **plan-skeptic** | One quick pass for the flaws that would make the plan fail (BLOCKER/MAJOR first); runs in its own context so it isn't biased | ✅ | new |
+| 3 | **plan-reviewer** | Quick check: reconcile planner vs. plan-skeptic → consensus verdict | — | new |
+| 4 | **test-writer** | Write the `test-cases.json` test matrix | — | `testCaseWriter` |
 | 5 | **test-skeptic** | Harden/de-bias the test cases (reload, edge, regression) | ✅ | new |
 | 6 | **implementer** (×N) | Each sub-agent builds ONE independent chunk from scoped context | — | `implementer` |
 | 7 | **test-validator** | Run tests adversarially — "scores" on failures found | ✅ | `validator` |
@@ -78,26 +78,28 @@ its job is to *find problems*, not to approve. There is no literal scoreboard.
 
 ## 3. The phases in detail
 
-### Phase 1 — Planning (loop until consensus)
+### Phase 1 — Planning (quick, ≤2 rounds)
 1. Coordinator orients itself by reading the relevant source directly
-   (`Glob`/`Grep`/`Read`) — entry points, touched files, and their importers.
-2. Coordinator hands the task to **planner** AND, *independently*, to **plan-skeptic**
-   (the skeptic gets the task + relevant code, **not** the planner's reasoning).
-3. Planner returns a plan → coordinator passes the plan to **plan-skeptic**, which
-   returns a flaw list → **plan-reviewer** reconciles → verdict.
-4. Repeat 2–3 until **all three converge** (plan-reviewer declares no blocking flaws).
-   Hard cap on planning rounds to avoid infinite loops (default 5).
-5. Emit two artifacts:
-   - `plan.brief.md` — bullets, human-facing; **opened in the editor** for you.
+   (`Glob`/`Grep`/`Read`) — entry points, touched files, and their importers. It then
+   asks you **once** to switch to accept-edits mode, which covers every agent's file
+   edits, and writes `planning/context.md`, a facts-only pack every agent starts from.
+2. **planner** writes two artifacts:
    - `plan.detail.md` — full implementation detail; the **coordinator and downstream
      agents work off this one**.
+   - `plan.brief.md` — bullets, human-facing; **linked for you** once the plan passes
+     review.
+3. **plan-skeptic** reads the plan in its own context (**not** the planner's reasoning)
+   and returns a short flaw list, BLOCKER/MAJOR first → **plan-reviewer** quick-checks
+   it → verdict. Only a VALID BLOCKER/MAJOR forces `REVISE`; MINOR/PARTIAL flaws become
+   implementer notes.
+4. On `REVISE`, the same planner revises once (resumed with its context) and the same
+   reviewer re-checks just those changes — no second skeptic pass. Still `REVISE` →
+   surfaced to you. A SIMPLE task can take the fast path instead (§8).
 
 ### Phase 2 — Parallel work
 Coordinator starts two tracks at once:
-- **Test track:** test-writer → `test-cases.json` (reviewable) + `test-cases.html`
-  (3-column table: *current* vs *proposed* vs *change*; opened in browser). Then
-  **test-skeptic** adds the missing cases (reload behavior, edge cases, regressions)
-  and checks for bias.
+- **Test track:** test-writer → `test-cases.json` (reviewable). Then **test-skeptic**
+  adds the missing cases (reload behavior, edge cases, regressions) and checks for bias.
 - **Impl track:** coordinator splits the work into **independent chunks** (e.g.
   target-screen / peers / …) and spawns **N implementer sub-agents**, each given only
   the files and context for its chunk. They implement and report back.
@@ -105,7 +107,9 @@ Coordinator starts two tracks at once:
 ### Phase 3 — Validation (max 3 rounds)
 - **test-validator** runs the tests adversarially. On any failure it returns a custom
   report to the coordinator.
-- Coordinator re-enters **Phase 1** with the failures as new input → full flow again.
+- Each failed case is tagged `impl` (the code doesn't match the plan) or `plan` (the plan
+  can't satisfy it). `impl` failures go straight back to the implementer for the affected
+  chunk; only `plan` failures re-enter **Phase 1** → full flow again.
 - **Cap: 3 validation rounds.** If still failing, **HALT** and ask the user:
   *ignore these tests / revert the changes / confirm anyway*.
 
@@ -113,29 +117,32 @@ Coordinator starts two tracks at once:
 - **sanitizer-skeptic** reviews every changed line against `CONVENTIONS.md`: removes
   dead/unused code, collapses "30 lines that should be 3", flags non-reuse, enforces
   file-structure and the ≤500-line cap. Returns a proposal list.
-- Coordinator applies them; loop until **≥80%** of proposals are addressed.
+- Coordinator applies them until **≥80%** are addressed, then runs one confirm pass (the
+  sanitizer checks its own proposal IDs and doesn't hunt for new ones).
 - **final-reviewer**: no secrets/tokens, no `console.log`, no `TODO`, OSS/vuln check.
 - Coordinator shows the user the final summary of everything done.
 
 ---
 
-## 4. Artifacts — everything under `.claude/output/task-<id>/`
+## 4. Artifacts — everything under `.ai-devkit/output/task-<id>/`
 
-All pipeline output stays inside `.claude/` (the whole folder is git-ignored in the
-target repo):
+All pipeline output stays inside `.ai-devkit/output/`, which the installer git-ignores in
+the target repo. Not `.claude/`: Claude Code protects that folder and asks before every
+write there, in every permission mode.
 ```
-.claude/output/task-<id>/
-  planning/    plan.brief.md, plan.detail.md
-  test-cases/  test-cases.json, test-cases.html
-  reports/     validation-report.md, sanitization-report.md, final-review.md
+.ai-devkit/output/task-<id>/
+  planning/    context.md, plan.brief.md, plan.detail.md
+  test-cases/  test-cases.json
+  reports/     changes.diff, validation-report.md, sanitization-report.md, final-review.md
 ```
 
 | File | For | Contents |
 |------|-----|----------|
-| `planning/plan.brief.md` | human | bullet plan, opened in editor |
+| `planning/context.md` | agents | facts-only context pack: touched files, importers, excerpts, check commands |
+| `planning/plan.brief.md` | human | bullet plan, linked for you |
 | `planning/plan.detail.md` | agents | full implementation plan (source of truth) |
 | `test-cases/test-cases.json` | agents + review | structured test matrix |
-| `test-cases/test-cases.html` | human | 3-column current/proposed/change table, opened in browser |
+| `reports/changes.diff` | agents | the task's diff + new files, saved by the last validation round |
 | `reports/validation-report.md` | coordinator | pass/fail per test, per round |
 | `reports/sanitization-report.md` | coordinator | proposed cuts/reuse/shortening + status |
 | `reports/final-review.md` | human | security/quality sign-off + summary |
@@ -146,7 +153,9 @@ target repo):
 
 - The coordinator orients itself by reading the target repo's source directly with
   `Glob`/`Grep`/`Read` — entry points, the files a task touches, and their importers.
-  There is no external indexer or graph step; source is the only source of truth.
+  There is no external indexer or graph step; source is the only source of truth. The
+  coordinator gathers this once into `planning/context.md`, and agents start from that
+  pack instead of each re-exploring the repo.
 - **Scoped context is the rule:** sub-agents receive only the files they need, never
   the whole repo. This keeps them unbiased, cheap, and focused.
 
@@ -186,9 +195,11 @@ written. Highlights (see the file for the full, evidence-backed rules):
 A single `/task` can fan out to **dozens of agent invocations** (planning triad loop
 + test track + N implementers + up to 3 validation rounds + sanitization loop).
 On a Claude Pro/Max subscription these draw from one **shared usage window** — a
-heavy task can exhaust it. Mitigations built into the design: hard round caps,
-scoped (small) context per agent, and a planned **"lite" mode** (skip some skeptics)
-for small tasks.
+heavy task can exhaust it. Mitigations built into the design: hard round caps, one
+shared context pack, an `effort` level in each agent's frontmatter (so subagents don't
+inherit a session-wide `xhigh`), `impl` failures fixed without re-planning, each check
+run once per validation round, and a **fast path** for SIMPLE tasks (planner →
+implementer → validator → final-reviewer, with the user's OK).
 
 ---
 

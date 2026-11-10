@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 //
 // The kit payload (commands, agents, rules, skills, secrets, CONVENTIONS.md)
 // lives in this package's .claude/ and is copied into the target repo. The whole
-// .claude/ folder is then added to the target's .gitignore — it's reinstalled by
-// this tool, not committed.
+// .claude/ folder and the pipeline's .ai-devkit/ output are then added to the
+// target's .gitignore — reinstalled or regenerated, never committed.
 // ---------------------------------------------------------------------------
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -21,8 +21,12 @@ const PKG_ROOT = path.resolve(HERE, "..");
 const PAYLOAD_SRC = path.join(PKG_ROOT, ".claude");
 
 // What we install (relative to .claude/). We never touch the target's own
-// settings*.json or its output/ folder.
+// settings*.json or the pipeline output in .ai-devkit/.
 const PAYLOAD = ["CONVENTIONS.md", "commands", "agents", "rules", "skills", "secrets"];
+
+// Pipeline output lives in .ai-devkit/, not .claude/: Claude Code asks before every
+// write inside .claude/, in every permission mode.
+const GITIGNORE_ENTRIES = [".claude/", ".ai-devkit/"];
 
 const C = {
   bold: (s) => `\x1b[1m${s}\x1b[0m`,
@@ -51,8 +55,8 @@ ${C.bold("Usage")}
 ${C.bold("What init does")}
   1. Copies the kit (commands, agents, rules, skills, secrets, CONVENTIONS.md)
      into <target>/.claude/
-  2. Adds ".claude/" to <target>/.gitignore (the kit is reinstalled, not committed)
-  3. Leaves your settings*.json and .claude/output/ untouched
+  2. Adds ".claude/" and ".ai-devkit/" (pipeline output) to <target>/.gitignore
+  3. Leaves your settings*.json and .ai-devkit/output/ untouched
 
 ${C.bold("Then, in the target repo")}
   - In Claude Code:   /task "<what you want done>"
@@ -73,20 +77,17 @@ function resolveTarget(arg) {
 
 function ensureGitignored(target) {
   const gi = path.join(target, ".gitignore");
-  const entry = ".claude/";
-  let lines = [];
-  if (fs.existsSync(gi)) {
-    lines = fs.readFileSync(gi, "utf8").split("\n");
-    const has = lines.some((l) => l.trim() === ".claude/" || l.trim() === ".claude");
-    if (has) return false;
-  }
+  const text = fs.existsSync(gi) ? fs.readFileSync(gi, "utf8") : "";
+  const lines = text.split("\n").map((l) => l.trim());
+  const missing = GITIGNORE_ENTRIES.filter((e) => !lines.includes(e) && !lines.includes(e.slice(0, -1)));
+  if (!missing.length) return missing;
   const addition =
-    (lines.length && lines[lines.length - 1].trim() !== "" ? "\n" : "") +
+    (text && !text.endsWith("\n") ? "\n" : "") +
     "\n# ai-devkit-v2 kit + its runtime output (reinstalled via `ai-devkit-v2 init`)\n" +
-    entry +
+    missing.join("\n") +
     "\n";
   fs.appendFileSync(gi, addition);
-  return true;
+  return missing;
 }
 
 function installKit(target) {
@@ -120,8 +121,9 @@ function cmdInit(arg, { update = false } = {}) {
   installKit(target);
   console.log(C.green("✔") + ` copied kit into ${path.join(".claude")}/ ${C.dim("(commands, agents, rules, skills, secrets, CONVENTIONS.md)")}`);
 
-  if (ensureGitignored(target)) console.log(C.green("✔") + " added .claude/ to .gitignore");
-  else console.log(C.dim("  .claude/ already git-ignored"));
+  const added = ensureGitignored(target);
+  if (added.length) console.log(C.green("✔") + ` added ${added.join(" and ")} to .gitignore`);
+  else console.log(C.dim(`  ${GITIGNORE_ENTRIES.join(" and ")} already git-ignored`));
 
   printNext(target);
 }

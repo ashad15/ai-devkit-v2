@@ -20,5 +20,5 @@ outside the repo anyway.
 
 ## Rules
 - Never commit a key file, token, or password.
-- Never put a secret in an agent prompt, a plan, or any `.claude/output/` artifact.
+- Never put a secret in an agent prompt, a plan, or any `.ai-devkit/output/` artifact.
 - The **final-reviewer** fails the pipeline if it finds a secret in the diff.
