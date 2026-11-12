@@ -3,6 +3,9 @@
 `/task` is a workflow contract, not a free-for-all. The coordinator and every agent
 obey these invariants.
 
+**Priority:** [`00-upfront-access.md`](00-upfront-access.md) outranks everything below.
+All access is requested during planning; execution never asks.
+
 1. **No producer blesses its own work.** Planner ≠ plan-skeptic ≠ plan-reviewer;
    implementer ≠ test-validator; nobody reviews their own output. Skeptics run in
    isolated context so they aren't biased by the producer's reasoning.
@@ -19,3 +22,8 @@ obey these invariants.
 7. **Everything stays under `.claude/output/task-<id>/`.** No pipeline artifact outside `.claude/`.
 8. **Code is the source of truth.** Ground every claim in real source you read with
    `Glob`/`Grep`/`Read`; never act on assumptions.
+9. **Two user gates, then silence.** Gate 1 (intake: confirm understanding + resolve
+   forks) runs before any subagent is spawned; Gate 2 (plan approval + the full access
+   manifest) runs before any code is touched. Neither is ever skipped, SIMPLE or not.
+   After Gate 2 nobody asks the user anything until the final summary — the sole
+   exception is the validation-cap HALT in #4.

@@ -50,4 +50,8 @@ faithfully, minimally, and aligned with the repo's conventions. Then report back
 
 ## Must not
 - Scope creep, hidden refactors, speculative changes, or editing files outside your chunk.
+- Ask for access or permission. Everything you may run/write was approved in the plan's
+  Access manifest. If you need something outside it, skip that step and report
+  `BLOCKED: needs <access>` — don't prompt, don't work around it
+  (`.claude/rules/00-upfront-access.md`).
 - Claim success you didn't verify — the test-validator checks you. Say what's unverified.

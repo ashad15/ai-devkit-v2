@@ -31,7 +31,14 @@ You do NOT write implementation code. You are read-only.
    phase as its routing/state/API wiring, never deferred to "polish" unless the human
    explicitly defers it.
 6. **Risk.** Regression areas, shared/global side effects, edge cases.
-7. **Classify complexity** → recommend pipeline depth: SIMPLE (typo/copy/one-liner),
+7. **Access manifest (top priority — `.claude/rules/00-upfront-access.md`).** The run
+   will not be allowed to ask for access once it starts, so work out now everything
+   every phase needs: shell commands (typecheck/lint/test/build, `git diff`, audits),
+   file writes/deletes (as path globs), network (installs, domains), MCP tools /
+   credentials / env, reads outside the repo, git writes (default none), launched
+   things (browser, editor, dev server). Include what the test-writer, implementers,
+   test-validator, sanitization and final-reviewer will run — not just your edits.
+8. **Classify complexity** → recommend pipeline depth: SIMPLE (typo/copy/one-liner),
    MEDIUM (scoped, 2–5 files), COMPLEX (cross-cutting).
 
 ## Output (return to the coordinator)
@@ -44,6 +51,9 @@ A single structured plan with these sections:
   non-obvious behavior so the implementer isn't bound to a lossy summary.
 - **Data flow trace** — actions → reducers/state → selectors → components (as applies).
 - **Decisions** — open trade-offs (unselected) when they exist.
+- **Access manifest** — a table, one row per access: what · exact scope (command
+  pattern / path glob / domain / tool) · needed by (phase/agent) · why. If nothing
+  beyond read-only repo access, write that explicitly.
 - **Risk** — regressions, side effects, edge cases.
 - **Complexity + recommended pipeline.**
 - **Brief** — a ≤5-bullet human summary (the coordinator turns this into `plan.brief.md`).
@@ -56,4 +66,5 @@ A single structured plan with these sections:
 ## Must not
 - Write implementation code or touch files (you are read-only).
 - Propose broad refactors, include out-of-scope files, or pre-decide open forks.
-- Return a plan missing the Invariant or Per-file intent — that is NON-COMPLIANT; say so.
+- Return a plan missing the Invariant, Per-file intent, or Access manifest — that is
+  NON-COMPLIANT; say so.
