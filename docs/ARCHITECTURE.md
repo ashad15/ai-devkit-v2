@@ -22,6 +22,8 @@ and skills — and upgraded from a linear pipeline into a coordinator-led org wi
                          │   (main session) │   drives every phase, hands each
                          └───────┬─────────-┘   agent ONLY its scoped context)
                                  │
+                    GATE 1: you confirm the task (intake)
+                                 │
    ┌──────────────PLANNING (quick, ≤2 rounds)─────────────────┐
    │  planner ── writes plan.detail.md + plan.brief.md        │
    │     │                                                    │
@@ -29,7 +31,7 @@ and skills — and upgraded from a linear pipeline into a coordinator-led org wi
    │     │                                                    │
    │  plan-reviewer ── quick verdict ─► at most one revision  │
    └──────────────────────────────────────────────────────────┘
-                                 │  (consensus)
+                                 │  (consensus → GATE 2: you approve plan + access manifest)
                                  ▼
           two plan files:  plan.brief.md (for you) + plan.detail.md (for agents)
                                  │
@@ -78,23 +80,32 @@ its job is to *find problems*, not to approve. There is no literal scoreboard.
 
 ## 3. The phases in detail
 
-### Phase 1 — Planning (quick, ≤2 rounds)
+### Phase 0 — Context + Gate 1 (intake)
 1. Coordinator orients itself by reading the relevant source directly
-   (`Glob`/`Grep`/`Read`) — entry points, touched files, and their importers. It then
-   asks you **once** to switch to accept-edits mode, which covers every agent's file
-   edits, and writes `planning/context.md`, a facts-only pack every agent starts from.
-2. **planner** writes two artifacts:
+   (`Glob`/`Grep`/`Read`) — entry points, touched files, and their importers. Read-only.
+2. **Gate 1** — before any subagent runs, it restates its understanding and asks you to
+   confirm it, resolve any fork the code can't answer, and switch to accept-edits mode.
+   `/task` never starts silently.
+3. It then writes `planning/context.md`, a facts-only pack every agent starts from.
+
+### Phase 1 — Planning (quick, ≤2 rounds)
+1. **planner** writes two artifacts:
    - `plan.detail.md` — full implementation detail; the **coordinator and downstream
      agents work off this one**.
    - `plan.brief.md` — bullets, human-facing; **linked for you** once the plan passes
      review.
-3. **plan-skeptic** reads the plan in its own context (**not** the planner's reasoning)
+2. **plan-skeptic** reads the plan in its own context (**not** the planner's reasoning)
    and returns a short flaw list, BLOCKER/MAJOR first → **plan-reviewer** quick-checks
    it → verdict. Only a VALID BLOCKER/MAJOR forces `REVISE`; MINOR/PARTIAL flaws become
    implementer notes.
-4. On `REVISE`, the same planner revises once (resumed with its context) and the same
+3. On `REVISE`, the same planner revises once (resumed with its context) and the same
    reviewer re-checks just those changes — no second skeptic pass. Still `REVISE` →
-   surfaced to you. A SIMPLE task can take the fast path instead (§8).
+   the disagreement goes to you at Gate 2.
+4. **Gate 2 — approval + access.** One consolidated question: approve the plan and its
+   **Access manifest** (every command, write, network call, credential, git write or
+   launch any phase needs), optionally pre-granted as allow rules; a SIMPLE plan can take
+   the fast path here (§8). Phases 2–4 then never ask; an unapproved access is skipped
+   and reported `BLOCKED`. See `.claude/rules/00-upfront-access.md` (top priority).
 
 ### Phase 2 — Parallel work
 Coordinator starts two tracks at once:
@@ -109,9 +120,11 @@ Coordinator starts two tracks at once:
   report to the coordinator.
 - Each failed case is tagged `impl` (the code doesn't match the plan) or `plan` (the plan
   can't satisfy it). `impl` failures go straight back to the implementer for the affected
-  chunk; only `plan` failures re-enter **Phase 1** → full flow again.
+  chunk; only `plan` failures re-enter **Phase 1** (planner → skeptic → reviewer, inside
+  the approved manifest — no new gate).
 - **Cap: 3 validation rounds.** If still failing, **HALT** and ask the user:
-  *ignore these tests / revert the changes / confirm anyway*.
+  *ignore these tests / revert the changes / confirm anyway*. (The only mid-run stop —
+  a decision about results, not an access request.)
 
 ### Phase 4 — Sanitization + final review
 - **sanitizer-skeptic** reviews every changed line against `CONVENTIONS.md`: removes
@@ -198,8 +211,8 @@ On a Claude Pro/Max subscription these draw from one **shared usage window** —
 heavy task can exhaust it. Mitigations built into the design: hard round caps, one
 shared context pack, an `effort` level in each agent's frontmatter (so subagents don't
 inherit a session-wide `xhigh`), `impl` failures fixed without re-planning, each check
-run once per validation round, and a **fast path** for SIMPLE tasks (planner →
-implementer → validator → final-reviewer, with the user's OK).
+run once per validation round, and a **fast path** for SIMPLE tasks (after planning and
+Gate 2: one implementer → validator → final-reviewer, with the user's OK).
 
 ---
 

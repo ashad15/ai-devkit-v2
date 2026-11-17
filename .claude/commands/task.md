@@ -13,7 +13,12 @@ another agent's private reasoning. You are the only one who sees everything.
 Task from the user: **$ARGUMENTS**
 
 Read `.claude/CONVENTIONS.md` before you start. The `.claude/rules/` files are already
-in your context — don't re-read them.
+in your context — don't re-read them. **`00-upfront-access.md` is top priority and
+overrides anything below.**
+
+**Do not start the pipeline silently.** `/task` asks the user only at Gate 1 (Phase 0)
+and Gate 2 (end of Phase 1), plus the validation-cap HALT. Nothing is spawned before
+Gate 1 and no code is touched before Gate 2.
 
 ## Output layout — EVERYTHING stays under `.ai-devkit/output/`
 Keep ALL generated files in one task folder. Never write pipeline files into `.claude/`:
@@ -41,41 +46,62 @@ When you spawn an agent, pass it the absolute path of its subfolder.
   implementers run none and every other step that needs commands uses a single call.
 - **The detailed plan is your source of truth** (`planning/plan.detail.md`), not the brief.
 - Announce each phase to the user in one line before you start it.
+- **Silent execution.** In Phases 2–4 never ask for access, permission, or clarification.
+  A step needing unapproved access is skipped and recorded as `BLOCKED: needs <access>`
+  — never prompt or work around it (`00-upfront-access.md`).
 
-## Phase 0 — Context + access (once; every agent reuses it)
+## Phase 0 — Context + Gate 1 (intake)
 1. Orient yourself in the repo by reading the real source: use `Glob`/`Grep`/`Read`
    to find the feature's entry points, the files the task touches, and their importers.
    Source is the only source of truth — never act on assumptions about structure. Keep
    it short: the touched files and their direct importers, not the whole feature.
-2. **Ask for access once, now**, so agents don't stop for approvals later. In one
-   message, tell the user what the run will do — edit files in the folders the task
-   touches and in `.ai-devkit/output/`, and run the check commands (one call per
-   validation round) plus `git diff` — and ask them to switch to **accept-edits** mode
-   (Shift+Tab in the terminal; the mode menu under the prompt box in VS Code). That one
-   switch approves every agent's file edits for the whole run. Wait for their OK.
-3. Write `.ai-devkit/output/task-<id>/planning/context.md` (writing a file creates its
-   folders; no `mkdir` needed) — facts only, no plan or opinions, so skeptics stay
-   independent: each touched file (path + role), its importers (blast radius), key
-   excerpts with `file:line`, and the repo's check commands from `package.json`. Agents
-   start from it instead of re-exploring the repo.
+   (Read-only; this is the only work allowed before Gate 1.)
+2. **Gate 1 — confirm before anything starts.**
+   - If `$ARGUMENTS` is empty or too vague to restate in one sentence, ask what they
+     want done and stop.
+   - Otherwise restate your understanding in ≤3 lines (goal · areas of the code you
+     found · what you're treating as out of scope), then ask with `AskUserQuestion`
+     (≤4 questions): *go ahead / adjust* plus every real fork the source can't answer
+     (approach, scope, behavior, acceptance). Don't ask what the code already tells you.
+   - In the same message, ask them to switch to **accept-edits** mode (Shift+Tab in the
+     terminal; the mode menu under the prompt box in VS Code) — it covers `context.md`,
+     the plan files and every agent's edits for the run.
+   - **Wait for the answers.** Fold them into the task statement you give the planner.
+     If `AskUserQuestion` is unavailable, ask in plain text and end your turn.
+3. Only after the user says go, write `.ai-devkit/output/task-<id>/planning/context.md`
+   (writing a file creates its folders; no `mkdir` needed) — facts only, no plan or
+   opinions, so skeptics stay independent: each touched file (path + role), its
+   importers (blast radius), key excerpts with `file:line`, and the repo's check
+   commands from `package.json`. Agents start from it instead of re-exploring the repo.
 
 ## Phase 1 — Planning (quick: plan → skeptic → review, ≤2 rounds)
 1. Spawn **planner** with the task, `context.md`, and the `planning/` path → it writes
-   `plan.detail.md` (full detail: files, edits, order, risks) + `plan.brief.md` and
-   returns its complexity class (SIMPLE / MEDIUM / COMPLEX) and any open Decisions.
-2. If the class is **SIMPLE**, ask the user once whether to take the **fast path**
-   (bottom of this file). If yes, follow it instead of the phases below.
-3. Spawn **plan-skeptic** *independently* with the task + `plan.detail.md` + `context.md`
+   `plan.detail.md` (full detail: files, edits, order, risks, **Access manifest**) +
+   `plan.brief.md` and returns its complexity class (SIMPLE / MEDIUM / COMPLEX) and any
+   open Decisions.
+2. Spawn **plan-skeptic** *independently* with the task + `plan.detail.md` + `context.md`
    (NOT the planner's reasoning) → a short flaw list, BLOCKER/MAJOR first.
-4. Spawn **plan-reviewer** with the task + `plan.detail.md` + the flaw list → a quick
+3. Spawn **plan-reviewer** with the task + `plan.detail.md` + the flaw list → a quick
    `CONSENSUS` or `REVISE` (with specific required changes).
-5. If `REVISE`, send the required changes to the **same planner** with `SendMessage` (its
+4. If `REVISE`, send the required changes to the **same planner** with `SendMessage` (its
    agentId is in the spawn result; it keeps its context, so it doesn't re-read the code),
    then have the **same reviewer** re-check only those changes — no second skeptic pass.
    If an agent can't be resumed, spawn a fresh one with the file paths. Still `REVISE`
-   after that → stop and surface the disagreement to the user.
-6. On `CONSENSUS`, append the reviewer's implementer notes to `plan.detail.md` and give
+   after that → bring the disagreement to Gate 2 as an open Decision.
+5. On `CONSENSUS`, append the reviewer's implementer notes to `plan.detail.md` and give
    the user a clickable link to `plan.brief.md`.
+6. **Gate 2 — plan approval + every access request (the last time you ask).** One
+   `AskUserQuestion` call (≤4 questions), which you wait on:
+   - **Plan** — approve / change / cancel (the brief is already linked). If the class is
+     **SIMPLE**, also offer the **fast path** (bottom of this file).
+   - **Access manifest** — list *every* row; options: approve all + pre-grant as allow
+     rules (via the `update-config` skill; it writes `.claude/settings*.json`, so expect
+     that one write to prompt) / approve all / deny specific rows.
+   - **Open Decisions** from the plan, if any (within the 4-question limit).
+
+   A change or a denied access goes back to the same planner and reviewer as in step 4
+   (user-driven, so outside the ≤2 cap), then you ask again. From here to the final
+   summary: **no questions.**
 
 ## Phase 2 — Parallel work
 1. From `planning/plan.detail.md`, split the work into **independent chunks**.
@@ -93,9 +119,11 @@ When you spawn an agent, pass it the absolute path of its subfolder.
    - only `impl` failures → re-spawn **implementer** for just the affected chunks, with
      the failure evidence. No re-plan.
    - any `plan` failure → re-enter **Phase 1** with the failures as added input, then
-     Phase 2 for the affected chunks.
+     Phase 2 for the affected chunks. A retry re-plan stays inside the approved
+     manifest — it is not a new Gate 2.
 3. After 3 failed rounds, **HALT** and ask the user:
-   *ignore these tests / revert the changes / confirm anyway*.
+   *ignore these tests / revert the changes / confirm anyway*. (The only mid-run stop —
+   a decision about results, not an access request.)
 
 ## Phase 4 — Sanitization + final review
 1. Spawn **sanitizer-skeptic** with `reports/changes.diff` (saved by the last validation
@@ -108,9 +136,11 @@ When you spawn an agent, pass it the absolute path of its subfolder.
    `TODO`/OSS-vuln audit). It returns `FINAL_REVIEW_CLEAN: true/false`.
 5. Show the user a concise summary: what changed, test status, what was cut in
    sanitization, final-review result, and anything left for them to verify manually.
-   Point them to `.ai-devkit/output/task-<id>/` for all artifacts.
+   Point them to `.ai-devkit/output/task-<id>/` for all artifacts. List any
+   `BLOCKED: needs <access>` items so they can approve and re-run just those.
 
-## Fast path (SIMPLE tasks, user-approved)
-The planner's plan files stand as written (no skeptic/reviewer) → one **implementer** →
-**test-validator** with no test matrix (checks only; ≤3 rounds, fixes go straight back
-to the implementer) → **final-reviewer** → the Phase 4 summary.
+## Fast path (SIMPLE tasks, user-approved at Gate 2)
+Phases 0–1 and both gates run as normal (the skeptic/reviewer also check the Access
+manifest). After Gate 2: one **implementer** → **test-validator** with no test matrix
+(checks only; ≤3 rounds, fixes go straight back to the implementer) → **final-reviewer**
+→ the Phase 4 summary.

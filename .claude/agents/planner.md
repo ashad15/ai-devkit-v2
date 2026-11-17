@@ -36,7 +36,11 @@ write are your two plan files.
    phase as its routing/state/API wiring, never deferred to "polish" unless the human
    explicitly defers it.
 6. **Risk.** Regression areas, shared/global side effects, edge cases.
-7. **Classify complexity** → recommend pipeline depth: SIMPLE (typo/copy/one-liner),
+7. **Access manifest (top priority).** Nothing can be asked once the run starts, so list
+   everything *every* phase needs — test-writer, implementers, test-validator,
+   sanitization, final-reviewer, not just your edits — using the access types in
+   `.claude/rules/00-upfront-access.md` (read it).
+8. **Classify complexity** → recommend pipeline depth: SIMPLE (typo/copy/one-liner),
    MEDIUM (scoped, 2–5 files), COMPLEX (cross-cutting).
 
 ## Output
@@ -50,6 +54,9 @@ apply — with these sections:
   non-obvious behavior so the implementer isn't bound to a lossy summary.
 - **Data flow trace** — actions → reducers/state → selectors → components (as applies).
 - **Decisions** — open trade-offs (unselected) when they exist.
+- **Access manifest** — a table, one row per access: what · exact scope (command
+  pattern / path glob / domain / tool) · needed by (phase/agent) · why. If nothing
+  beyond read-only repo access, write that explicitly.
 - **Risk** — regressions, side effects, edge cases.
 - **Complexity + recommended pipeline.**
 
@@ -68,4 +75,5 @@ On a re-plan, edit `plan.detail.md` in place, mark each changed section
 ## Must not
 - Write implementation code or touch any file other than your two plan files.
 - Propose broad refactors, include out-of-scope files, or pre-decide open forks.
-- Write a plan missing the Invariant or Per-file intent — that is NON-COMPLIANT; say so.
+- Return a plan missing the Invariant, Per-file intent, or Access manifest — that is
+  NON-COMPLIANT; say so.

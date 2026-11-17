@@ -12,7 +12,8 @@ obey these invariants.
 3. **Human-facing vs agent-facing artifacts are separate.** `plan.brief.md` is for the
    user (linked for them after planning); `plan.detail.md` is the agents' source of truth.
 4. **Caps are hard.** Planning ≤ 2 rounds (plan → skeptic → review, then at most one
-   revision that the reviewer re-checks); validation retry ≤ 3 rounds (then HALT and ask
+   revision that the reviewer re-checks; a user change at Gate 2 adds a revision outside
+   this cap); validation retry ≤ 3 rounds (then HALT and ask
    the user; `impl` failures go back to the implementer, only `plan` failures re-plan);
    sanitization applies fixes until ≥ 80% of proposals are addressed, with ≤ 2 sanitizer
    passes (review + one confirm).
@@ -26,7 +27,8 @@ obey these invariants.
    on every write.
 8. **Code is the source of truth.** Ground every claim in real source you read with
    `Glob`/`Grep`/`Read`; never act on assumptions.
-9. **Access is asked once.** In Phase 0 the coordinator asks the user to switch to
-   accept-edits mode, which covers every agent's file edits. Commands are batched —
-   implementers run none, any other step uses one call — because each call can mean an
-   approval prompt.
+9. **Two user gates, then silence.** Gate 1 (intake: confirm understanding + resolve
+   forks) runs before any subagent is spawned; Gate 2 (plan approval + the full access
+   manifest) runs before any code is touched. Neither is ever skipped, SIMPLE or not.
+   After Gate 2 nobody asks the user anything until the final summary — the sole
+   exception is the validation-cap HALT in #4.

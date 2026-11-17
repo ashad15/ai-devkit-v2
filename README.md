@@ -10,7 +10,9 @@ brains, re-platformed onto Claude Code's subagents, slash commands, and skills.
 ```
 /task "<what you want>"
    → coordinator
+      → GATE 1   (you confirm the task)
       → PLAN     (planner → plan-skeptic → plan-reviewer, quick, ≤2 rounds)
+      → GATE 2   (you approve the plan + access manifest; then no more questions)
       → TEST     (test-writer → test-skeptic)      ⎫ in
       → BUILD    (N implementer sub-agents, scoped) ⎭ parallel
       → VALIDATE (test-validator, ≤3 retries)
@@ -32,7 +34,7 @@ decides. Quality comes from the structure, not from any single agent being cleve
     planner.md  plan-skeptic.md  plan-reviewer.md
     test-writer.md  test-skeptic.md  implementer.md
     test-validator.md  sanitizer-skeptic.md  final-reviewer.md
-  rules/                  # pipeline contract, conventions pointer
+  rules/                  # 00-upfront-access (top priority), pipeline contract, conventions pointer
   secrets/README.md       # where local MCP secrets go (never committed)
   CONVENTIONS.md          # the enforceable coding standard (from the target repo)
 bin/ai-devkit-v2.js       # the installer CLI
@@ -58,16 +60,17 @@ target repo so Claude Code loads them there. (Installer script TBD — see
 Per-task artifacts land in `.ai-devkit/output/task-<id>/` (plan.brief.md,
 plan.detail.md, test-cases.json, reports); you get a link to the brief plan.
 
-At the start, `/task` asks you once to switch to **accept-edits** mode, which approves
-every agent's file edits for the run. Commands still ask, but they're batched into a few
-calls (about one per validation round). Where your org's policy allows custom permission
-rules, you can pre-approve the check commands with `/permissions`.
+`/task` asks you things at two points only. **Gate 1** confirms what it understood (and
+asks you to switch to **accept-edits** mode, Shift+Tab). **Gate 2** asks you to approve
+the plan plus its full **access manifest** — every command, network call or other access
+the run needs — and offers to pre-grant them as allow rules. After that it runs without
+asking; anything unapproved is skipped and listed as `BLOCKED` in the summary.
 
 ## ⚠️ Cost
 One `/task` can fan out to **dozens of agent invocations**. On a Pro/Max subscription
 they share one usage window — a heavy task can exhaust it. Round caps and per-agent
-effort levels are built in, and SIMPLE tasks can take a fast path (planner → implementer
-→ validator → final review).
+effort levels are built in, and SIMPLE tasks can take a fast path after planning (one
+implementer → validator → final review; no test track or sanitization).
 
 ## Status
 Early build. See `docs/ARCHITECTURE.md` §9 for the phased plan. Step 0 (scaffold +

@@ -25,7 +25,9 @@ check, not a second review.
    on faith, but open the code only to settle a disputed BLOCKER/MAJOR. Mark each: VALID
    (must fix) / PARTIAL (should fix) / INVALID (dismiss, with reason).
 3. **Check completeness** independent of the skeptic: does the plan deliver the whole
-   invariant? Any missing implicit deliverable? Any scope creep?
+   invariant? Any missing implicit deliverable? Any scope creep? Is there an Access
+   manifest covering every phase? A missing or incomplete one is a VALID blocker
+   (`.claude/rules/00-upfront-access.md`).
 4. **Decide.**
    - `CONSENSUS` — no VALID BLOCKER or MAJOR flaw remains; the plan delivers the
      invariant; risks are acknowledged. Build it.
